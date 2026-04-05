@@ -35,14 +35,15 @@
     </model-viewer>
 
     <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
-      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto HD</button>
-      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° (10s HD)</button>
+      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto HD Perfeita</button>
+      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° (5s Full HD)</button>
     </div>
 
     <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
        <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO (10 SEG)</span>
-       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">10s</span>
+       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO HD</span>
+       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">5s</span>
+       <small style="color: #888;">Garantindo o giro e as cores exatas...</small>
     </div>
   </div>
 
@@ -91,11 +92,13 @@
 
   const toRGB = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255, 1];
 
+  // MATERIAIS
   document.querySelector('#color-handle').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_interna")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-body').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_caneca")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-stamp').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_arte")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-base').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_base")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   
+  // CENÁRIO
   document.querySelector('#color-bg').oninput = (e) => {
     hasCustomBg = true;
     currentBgColor = e.target.value;
@@ -127,6 +130,7 @@
     });
   };
 
+  // CROPPER
   document.querySelector('#upload-arte').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -149,12 +153,13 @@
     }
   }
 
-  // Função que respeita a proporção exata sem amassar
+  // DESENHO DO QUADRO (EVITA AMASSAR)
   function drawComposite(ctx, width, height, sourceImage) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);
 
+    // Fundo
     if (hasCustomBg) {
       if (currentBgImage) {
         const scale = Math.max(width / currentBgImage.width, height / currentBgImage.height);
@@ -173,32 +178,27 @@
       ctx.fillRect(0, 0, width, height);
     }
 
-    // Calcula a escala exata para não distorcer o canvas do model-viewer
-    const srcW = sourceImage.width || sourceImage.videoWidth;
-    const srcH = sourceImage.height || sourceImage.videoHeight;
-    const scale3D = Math.min(width / srcW, height / srcH);
-    const drawW = srcW * scale3D;
-    const drawH = srcH * scale3D;
+    // Calcula escala para manter proporção (Caneca é 1:1)
+    const scale3D = Math.min(width / sourceImage.width, height / sourceImage.height);
+    const drawW = sourceImage.width * scale3D;
+    const drawH = sourceImage.height * scale3D;
     const dx = (width - drawW) / 2;
     const dy = (height - drawH) / 2;
     
     ctx.drawImage(sourceImage, dx, dy, drawW, drawH);
   }
 
-  // FOTO HD (Captura de alta fidelidade)
+  // FOTO HD
   document.querySelector('#btn-screenshot').onclick = async () => {
     const blob = await mv.toBlob({ idealAspect: false });
     const url = URL.createObjectURL(blob);
-    
     const img3d = new Image();
     img3d.onload = () => {
       const photoCanvas = document.createElement('canvas');
       photoCanvas.width = 1920; 
       photoCanvas.height = 1080;
       const ctx = photoCanvas.getContext('2d');
-      
       drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
-      
       const a = document.createElement('a');
       a.href = photoCanvas.toDataURL('image/png', 1.0);
       a.download = 'mockup-foto-hd.png';
@@ -208,18 +208,14 @@
     img3d.src = url;
   };
 
-  // VÍDEO 360° (Renderização em tempo real sem toDataURL para não perder cores)
+  // VÍDEO 360° (5 SEGUNDOS FULL HD)
   document.querySelector('#btn-video').onclick = async () => {
     const mvCanvas = mv.shadowRoot.querySelector('canvas');
     if (!mvCanvas) return;
 
     videoLoader.style.display = 'flex';
-    
     const orbit = mv.getCameraOrbit();
     const startTheta = orbit.theta * (180 / Math.PI); 
-    const startPhi = orbit.phi;
-    const startRadius = orbit.radius;
-
     const oldDecay = mv.interpolationDecay;
     mv.interpolationDecay = 0; 
 
@@ -229,33 +225,29 @@
     const ctx = captureCanvas.getContext('2d');
 
     const stream = captureCanvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 });
+    // Bitrate de 10Mbps para alta qualidade
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 10000000 });
     const chunks = [];
 
     recorder.ondataavailable = e => chunks.push(e.data);
     recorder.onstop = () => {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
-      a.download = `mockup-360-10s.webm`;
+      a.download = `mockup-360-5s-HD.webm`;
       a.click();
       videoLoader.style.display = 'none';
-      
       mv.interpolationDecay = oldDecay;
-      mv.cameraOrbit = `${startTheta}deg ${startPhi}rad ${startRadius}m`;
+      mv.cameraOrbit = `${startTheta}deg ${orbit.phi}rad ${orbit.radius}m`;
       mv.jumpCameraToGoal();
     };
 
     recorder.start();
 
-    const duration = 10000; 
+    const duration = 5000; // Alterado para 5 segundos
     let startTime = null;
 
     function renderLoop(time) {
       if (!startTime) startTime = time;
-
-      // Desenha o quadro atual copiando o canvas diretamente (sem perder texturas)
-      drawComposite(ctx, captureCanvas.width, captureCanvas.height, mvCanvas);
-
       const progress = (time - startTime) / duration;
       
       if (progress > 1) {
@@ -263,12 +255,12 @@
         return;
       }
 
-      // Calcula o próximo ângulo
       const currentAngle = startTheta + (progress * 360);
-      mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
+      mv.cameraOrbit = `${currentAngle}deg ${orbit.phi}rad ${orbit.radius}m`;
       mv.jumpCameraToGoal();
 
-      timerText.innerText = Math.ceil(10 - (progress * 10)) + 's';
+      drawComposite(ctx, captureCanvas.width, captureCanvas.height, mvCanvas);
+      timerText.innerText = Math.ceil(5 - (progress * 5)) + 's';
 
       requestAnimationFrame(renderLoop);
     }
