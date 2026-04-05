@@ -42,8 +42,7 @@
     <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
        <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
        <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO (10 SEG)</span>
-       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">0%</span>
-       <small style="color: #888;">Renderizando texturas e giro 360° exato...</small>
+       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">10s</span>
     </div>
   </div>
 
@@ -150,19 +149,12 @@
     }
   }
 
-  // Captura garantida da GPU com cores e texturas
-  const get3DImage = () => new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = mv.toDataURL('image/png', 1.0);
-  });
-
+  // Função que respeita a proporção exata sem amassar
   function drawComposite(ctx, width, height, sourceImage) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);
 
-    // Desenha Fundo
     if (hasCustomBg) {
       if (currentBgImage) {
         const scale = Math.max(width / currentBgImage.width, height / currentBgImage.height);
@@ -181,44 +173,55 @@
       ctx.fillRect(0, 0, width, height);
     }
 
-    // Calcula proporção para não amassar a caneca no 16:9
-    const scale3D = Math.min(width / sourceImage.width, height / sourceImage.height);
-    const drawW = sourceImage.width * scale3D;
-    const drawH = sourceImage.height * scale3D;
+    // Calcula a escala exata para não distorcer o canvas do model-viewer
+    const srcW = sourceImage.width || sourceImage.videoWidth;
+    const srcH = sourceImage.height || sourceImage.videoHeight;
+    const scale3D = Math.min(width / srcW, height / srcH);
+    const drawW = srcW * scale3D;
+    const drawH = srcH * scale3D;
     const dx = (width - drawW) / 2;
     const dy = (height - drawH) / 2;
     
     ctx.drawImage(sourceImage, dx, dy, drawW, drawH);
   }
 
-  // FOTO HD OTIMIZADA
+  // FOTO HD (Captura de alta fidelidade)
   document.querySelector('#btn-screenshot').onclick = async () => {
-    const photoCanvas = document.createElement('canvas');
-    photoCanvas.width = 1920; 
-    photoCanvas.height = 1080;
-    const ctx = photoCanvas.getContext('2d');
+    const blob = await mv.toBlob({ idealAspect: false });
+    const url = URL.createObjectURL(blob);
     
-    const img3d = await get3DImage(); // Força a captura colorida exata
-    drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
-    
-    const a = document.createElement('a');
-    a.href = photoCanvas.toDataURL('image/png', 1.0);
-    a.download = 'mockup-foto-hd.png';
-    a.click();
+    const img3d = new Image();
+    img3d.onload = () => {
+      const photoCanvas = document.createElement('canvas');
+      photoCanvas.width = 1920; 
+      photoCanvas.height = 1080;
+      const ctx = photoCanvas.getContext('2d');
+      
+      drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
+      
+      const a = document.createElement('a');
+      a.href = photoCanvas.toDataURL('image/png', 1.0);
+      a.download = 'mockup-foto-hd.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    img3d.src = url;
   };
 
-  // VÍDEO 360° (Renderização Assegurada Frame a Frame)
+  // VÍDEO 360° (Renderização em tempo real sem toDataURL para não perder cores)
   document.querySelector('#btn-video').onclick = async () => {
+    const mvCanvas = mv.shadowRoot.querySelector('canvas');
+    if (!mvCanvas) return;
+
     videoLoader.style.display = 'flex';
     
-    // Captura posição exata para começar a girar a partir daqui
     const orbit = mv.getCameraOrbit();
     const startTheta = orbit.theta * (180 / Math.PI); 
     const startPhi = orbit.phi;
     const startRadius = orbit.radius;
 
     const oldDecay = mv.interpolationDecay;
-    mv.interpolationDecay = 0; // Trava a câmera para não derrapar
+    mv.interpolationDecay = 0; 
 
     const captureCanvas = document.createElement('canvas');
     captureCanvas.width = 1920; 
@@ -233,11 +236,10 @@
     recorder.onstop = () => {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
-      a.download = `mockup-360-HD-10s.webm`;
+      a.download = `mockup-360-10s.webm`;
       a.click();
       videoLoader.style.display = 'none';
       
-      // Devolve para a posição inicial
       mv.interpolationDecay = oldDecay;
       mv.cameraOrbit = `${startTheta}deg ${startPhi}rad ${startRadius}m`;
       mv.jumpCameraToGoal();
@@ -245,37 +247,33 @@
 
     recorder.start();
 
-    const totalFrames = 300; // 30fps * 10 segundos
-    let currentFrame = 0;
+    const duration = 10000; 
+    let startTime = null;
 
-    async function processNextFrame() {
-      const progress = currentFrame / totalFrames;
+    function renderLoop(time) {
+      if (!startTime) startTime = time;
+
+      // Desenha o quadro atual copiando o canvas diretamente (sem perder texturas)
+      drawComposite(ctx, captureCanvas.width, captureCanvas.height, mvCanvas);
+
+      const progress = (time - startTime) / duration;
       
-      // Gira +360 graus do ponto atual
+      if (progress > 1) {
+        recorder.stop();
+        return;
+      }
+
+      // Calcula o próximo ângulo
       const currentAngle = startTheta + (progress * 360);
       mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
       mv.jumpCameraToGoal();
 
-      // Espera a placa de vídeo processar
-      await new Promise(r => requestAnimationFrame(r));
+      timerText.innerText = Math.ceil(10 - (progress * 10)) + 's';
 
-      // Extrai imagem colorida
-      const img3d = await get3DImage();
-      
-      // Monta com o fundo na proporção certa
-      drawComposite(ctx, captureCanvas.width, captureCanvas.height, img3d);
-
-      timerText.innerText = Math.round(progress * 100) + '%';
-      currentFrame++;
-
-      if (currentFrame <= totalFrames) {
-        requestAnimationFrame(processNextFrame);
-      } else {
-        setTimeout(() => recorder.stop(), 200);
-      }
+      requestAnimationFrame(renderLoop);
     }
 
-    processNextFrame();
+    requestAnimationFrame(renderLoop);
   };
 </script>
 </body>
