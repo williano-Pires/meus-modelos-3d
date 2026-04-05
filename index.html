@@ -35,15 +35,15 @@
     </model-viewer>
 
     <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
-      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto HD</button>
+      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto HD Perfeita</button>
       <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Suave (10s)</button>
     </div>
 
     <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
        <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">RENDERIZANDO VÍDEO LENTO...</span>
-       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">0%</span>
-       <small style="color: #888;">Processando 300 quadros para máxima suavidade.</small>
+       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO (10 SEG)</span>
+       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">10s</span>
+       <small style="color: #888;">Garantindo o giro e as cores exatas...</small>
     </div>
   </div>
 
@@ -92,13 +92,11 @@
 
   const toRGB = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255, 1];
 
-  // LOGICA DE MATERIAIS
   document.querySelector('#color-handle').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_interna")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-body').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_caneca")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-stamp').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_arte")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-base').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_base")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   
-  // LOGICA DE CENÁRIO
   document.querySelector('#color-bg').oninput = (e) => {
     hasCustomBg = true;
     currentBgColor = e.target.value;
@@ -130,7 +128,6 @@
     });
   };
 
-  // CROPPER
   document.querySelector('#upload-arte').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -148,17 +145,14 @@
   async function applyTexture(url) {
     const tex = await mv.createTexture(url);
     const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_arte"));
-    if (m && m.pbrMetallicRoughness.baseColorTexture) m.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
+    if (m && m.pbrMetallicRoughness.baseColorTexture) {
+      m.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
+    }
   }
 
-  // FUNCAO PARA TIRAR FOTO DO 3D COM TODAS AS CORES
-  const get3DImage = () => new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = mv.toDataURL('image/png');
-  });
+  function drawComposite(ctx, width, height, sourceImage) {
+    ctx.clearRect(0, 0, width, height);
 
-  function drawComposite(ctx, width, height, img3d) {
     if (hasCustomBg) {
       if (currentBgImage) {
         const scale = Math.max(width / currentBgImage.width, height / currentBgImage.height);
@@ -170,28 +164,58 @@
         ctx.fillRect(0, 0, width, height);
       }
     } else {
-      ctx.fillStyle = '#ffffff';
+      const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/2);
+      gradient.addColorStop(0, "#ffffff");
+      gradient.addColorStop(1, "#e0e0e0");
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
     }
-    ctx.drawImage(img3d, 0, 0, width, height);
+
+    ctx.drawImage(sourceImage, 0, 0, width, height);
   }
 
-  // GRAVADOR DE VÍDEO LENTO E SUAVE (10 SEGUNDOS)
+  // FOTO HD (VERSÃO ESTÁVEL V6)
+  document.querySelector('#btn-screenshot').onclick = async () => {
+    const blob = await mv.toBlob({ idealAspect: false });
+    const url = URL.createObjectURL(blob);
+    
+    const img3d = new Image();
+    img3d.onload = () => {
+      const photoCanvas = document.createElement('canvas');
+      photoCanvas.width = 1920; 
+      photoCanvas.height = 1080;
+      const ctx = photoCanvas.getContext('2d');
+      
+      drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
+      
+      const a = document.createElement('a');
+      a.href = photoCanvas.toDataURL('image/png', 1.0);
+      a.download = 'mockup-foto-hd.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    img3d.src = url;
+  };
+
+  // VÍDEO 360° (VERSÃO ESTÁVEL V6 + 10 SEGUNDOS)
   document.querySelector('#btn-video').onclick = async () => {
+    const mvCanvas = mv.shadowRoot.querySelector('canvas');
+    if (!mvCanvas) return;
+
     videoLoader.style.display = 'flex';
     
     const orbit = mv.getCameraOrbit();
-    const startTheta = orbit.theta * (180 / Math.PI);
+    const startTheta = orbit.theta * (180 / Math.PI); 
     const oldDecay = mv.interpolationDecay;
-    mv.interpolationDecay = 0; // Movimento preciso para gravação
+    mv.interpolationDecay = 0; 
 
     const captureCanvas = document.createElement('canvas');
-    captureCanvas.width = 1080;
+    captureCanvas.width = 1080; 
     captureCanvas.height = 1080;
     const ctx = captureCanvas.getContext('2d');
 
     const stream = captureCanvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 });
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 });
     const chunks = [];
 
     recorder.ondataavailable = e => chunks.push(e.data);
@@ -201,6 +225,7 @@
       a.download = `mockup-360-HD-10s.webm`;
       a.click();
       videoLoader.style.display = 'none';
+      
       mv.interpolationDecay = oldDecay;
       mv.cameraOrbit = `${startTheta}deg ${orbit.phi}rad ${orbit.radius}m`;
       mv.jumpCameraToGoal();
@@ -208,46 +233,32 @@
 
     recorder.start();
 
-    // AJUSTE: 300 quadros para 10 segundos de vídeo a 30fps
-    const totalFrames = 300; 
-    let currentFrame = 0;
+    // AQUI ESTÁ A ALTERAÇÃO PARA 10 SEGUNDOS
+    const duration = 10000; 
+    let startTime = null;
 
-    async function renderFrame() {
-      const angle = startTheta + ((currentFrame / totalFrames) * 360);
-      mv.cameraOrbit = `${angle}deg ${orbit.phi}rad ${orbit.radius}m`;
+    function renderLoop(time) {
+      if (!startTime) startTime = time;
+
+      drawComposite(ctx, captureCanvas.width, captureCanvas.height, mvCanvas);
+
+      const progress = (time - startTime) / duration;
+      if (progress > 1) {
+        recorder.stop();
+        return;
+      }
+
+      const currentAngle = startTheta + (progress * 360);
+      mv.cameraOrbit = `${currentAngle}deg ${orbit.phi}rad ${orbit.radius}m`;
       mv.jumpCameraToGoal();
 
-      // Aguarda o próximo ciclo do navegador para garantir a pintura do 3D
-      await new Promise(r => requestAnimationFrame(r));
-      
-      const img3d = await get3DImage();
-      drawComposite(ctx, captureCanvas.width, captureCanvas.height, img3d);
+      // Atualiza o relógio para 10 segundos
+      timerText.innerText = Math.ceil(10 - (progress * 10)) + 's';
 
-      timerText.innerText = Math.round((currentFrame / totalFrames) * 100) + '%';
-      currentFrame++;
-
-      if (currentFrame <= totalFrames) {
-        requestAnimationFrame(renderFrame);
-      } else {
-        setTimeout(() => recorder.stop(), 500);
-      }
+      requestAnimationFrame(renderLoop);
     }
 
-    renderFrame();
-  };
-
-  // FOTO HD
-  document.querySelector('#btn-screenshot').onclick = async () => {
-    const photoCanvas = document.createElement('canvas');
-    photoCanvas.width = 1920; 
-    photoCanvas.height = 1080;
-    const ctx = photoCanvas.getContext('2d');
-    const img3d = await get3DImage();
-    drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
-    const a = document.createElement('a');
-    a.href = photoCanvas.toDataURL('image/png');
-    a.download = 'mockup-foto-hd.png';
-    a.click();
+    requestAnimationFrame(renderLoop);
   };
 </script>
 </body>
