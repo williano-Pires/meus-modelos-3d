@@ -49,7 +49,7 @@
        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #2ecc71; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
        <span style="font-weight: bold; font-size: 18px;">GRAVANDO VÍDEO 360°</span>
        <span id="timer-text" style="color: #2ecc71; font-size: 24px; font-weight: bold; margin-top: 10px;">8s</span>
-       <small style="color: #ccc; margin-top: 5px;">Aguarde, processando texturas...</small>
+       <small style="color: #ccc; margin-top: 5px;">Sincronizando estampas e cenário...</small>
     </div>
   </div>
 
@@ -63,9 +63,11 @@
       </label>
       <input type="file" id="upload-arte" accept="image/*" style="display: none;">
     </div>
+    
     <div style="height: 220px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc;">
       <img id="crop-target" src="https://via.placeholder.com/800x400?text=Sua+Arte+Aqui" style="max-width: 100%; max-height: 100%;">
     </div>
+
     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap;">
       <button onclick="if(cropper) cropper.zoom(0.1)" style="padding: 6px 12px; cursor:pointer; border: 1px solid #ced4da; border-radius: 4px; background: #fff; font-weight: bold; color: #495057;">🔍 Zoom +</button>
       <button onclick="if(cropper) cropper.zoom(-0.1)" style="padding: 6px 12px; cursor:pointer; border: 1px solid #ced4da; border-radius: 4px; background: #fff; font-weight: bold; color: #495057;">🔎 Zoom -</button>
@@ -100,11 +102,13 @@
 
   const toRGB = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255, 1];
 
+  // Controles de Materiais
   document.querySelector('#color-handle').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_interna")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-body').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_caneca")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-stamp').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_arte")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-base').oninput = (e) => { const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_base")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   
+  // Controles de Cenário
   document.querySelector('#color-bg').oninput = (e) => {
     hasCustomBg = true;
     currentBgColor = e.target.value;
@@ -136,6 +140,7 @@
     });
   };
 
+  // Cropper
   document.querySelector('#upload-arte').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -168,6 +173,7 @@
     }
   }
 
+  // Composição de Imagem/Foto
   function renderCompositeFrame(ctx, width, height, imageToDraw) {
     if (hasCustomBg) {
       if (currentBgImage) {
@@ -186,95 +192,143 @@
     ctx.drawImage(imageToDraw, 0, 0, width, height);
   }
 
-  // GERADOR DE VÍDEO REFORMULADO (Agora filma a textura e força o giro)
+  // ==========================================
+  // MOTOR DE VÍDEO V3 (CORRIGIDO)
+  // ==========================================
   document.querySelector('#btn-video').onclick = () => {
     try {
-      const currentOrbit = mv.getCameraOrbit(); 
+      const mvCanvas = mv.shadowRoot.querySelector('canvas');
+      if (!mvCanvas) { alert("Aguarde a caneca carregar."); return; }
+
       videoLoader.style.display = 'flex';
+
+      // 1. Pegar a posição EXATA atual da câmera
+      const orbit = mv.getCameraOrbit();
+      const startThetaDeg = orbit.theta * (180 / Math.PI); // Converte radianos para graus
+      const startPhi = orbit.phi;
+      const startRadius = orbit.radius;
+
+      // 2. Desligar a suavização da câmera (impede o vídeo de ficar "estático" ou lutando com o giro)
+      const oldDecay = mv.interpolationDecay;
+      mv.interpolationDecay = 0;
+
+      // 3. Preparar o Canvas de gravação
+      const compCanvas = document.createElement('canvas');
+      compCanvas.width = mvCanvas.width;
+      compCanvas.height = mvCanvas.height;
+      const ctx = compCanvas.getContext('2d');
+
+      const stream = compCanvas.captureStream(30);
       
-      // Passo 1: Puxa a primeira imagem oficial com todas as texturas aplicadas
-      const firstFrame = new Image();
-      firstFrame.onload = () => {
-        const compCanvas = document.createElement('canvas');
-        compCanvas.width = firstFrame.width;
-        compCanvas.height = firstFrame.height;
-        const ctx = compCanvas.getContext('2d');
+      // Suporte para MP4 ou WebM
+      const types = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm', ''];
+      const mimeType = types.find(t => t === '' || MediaRecorder.isTypeSupported(t));
+      
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks = [];
 
-        const stream = compCanvas.captureStream(30);
-        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        const chunks = [];
+      recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = mimeType && mimeType.includes('mp4') ? 'caneca-360.mp4' : 'caneca-360.webm';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        videoLoader.style.display = 'none';
 
-        recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-        recorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'video/webm' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'caneca-360.webm';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          videoLoader.style.display = 'none';
-          
-          // Devolve a câmera para a posição original
-          mv.cameraOrbit = `0deg ${currentOrbit.phi}rad ${currentOrbit.radius}m`; 
-          mv.jumpCameraToGoal();
-        };
-
-        recorder.start();
-        let startTime = null;
-        const duration = 8000; 
-
-        function animate360(timestamp) {
-          if (!startTime) startTime = timestamp;
-          const progress = timestamp - startTime;
-          const currentAngle = (progress / duration) * 360;
-          
-          // Passo 2: Gira a câmera e OBRIGA ela a pular para o ângulo certo agora
-          mv.cameraOrbit = `${currentAngle}deg ${currentOrbit.phi}rad ${currentOrbit.radius}m`;
-          mv.jumpCameraToGoal();
-          
-          // Passo 3: Tira a "foto" exata daquele momento para o vídeo
-          const frameData = mv.toDataURL('image/jpeg', 0.9);
-          const img = new Image();
-          img.onload = () => {
-            renderCompositeFrame(ctx, compCanvas.width, compCanvas.height, img);
-          };
-          img.src = frameData;
-
-          const remaining = Math.ceil((duration - progress) / 1000);
-          if(remaining >= 0) timerText.innerText = remaining + "s";
-          
-          if (progress < duration) requestAnimationFrame(animate360);
-          else if(recorder.state === "recording") recorder.stop();
-        }
-        requestAnimationFrame(animate360);
+        // 4. Devolver a câmera exatamente onde estava e religar a suavização
+        mv.cameraOrbit = `${startThetaDeg}deg ${startPhi}rad ${startRadius}m`;
+        mv.interpolationDecay = oldDecay;
       };
+
+      recorder.start();
+
+      let startTime = null;
+      const duration = 8000; // 8 segundos de giro
+
+      function animate360(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        
+        // SOMA os 360 graus a partir da posição inicial
+        const currentAngle = startThetaDeg + ((progress / duration) * 360);
+        
+        // Aplica o ângulo sem suavização
+        mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
+
+        // 5. O SEGREDO DA TEXTURA: Desenha primeiro o fundo, depois captura o canvas WebGL puro por cima
+        if (hasCustomBg) {
+          if (currentBgImage) {
+            const scale = Math.max(compCanvas.width / currentBgImage.width, compCanvas.height / currentBgImage.height);
+            const x = (compCanvas.width / 2) - (currentBgImage.width / 2) * scale;
+            const y = (compCanvas.height / 2) - (currentBgImage.height / 2) * scale;
+            ctx.drawImage(currentBgImage, x, y, currentBgImage.width * scale, currentBgImage.height * scale);
+          } else {
+            ctx.fillStyle = currentBgColor;
+            ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+          }
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+        }
+        
+        // Puxa o frame exato em alta qualidade mantendo as cores
+        ctx.drawImage(mvCanvas, 0, 0, compCanvas.width, compCanvas.height);
+
+        const remaining = Math.ceil((duration - progress) / 1000);
+        if(remaining >= 0) timerText.innerText = remaining + "s";
+        
+        if (progress < duration) {
+          requestAnimationFrame(animate360);
+        } else {
+          recorder.stop();
+        }
+      }
       
-      // Inicia o processo puxando a imagem correta do 3D
-      firstFrame.src = mv.toDataURL('image/jpeg', 0.9);
+      // Dá tempo pro WebGL processar o primeiro frame antes de gravar
+      setTimeout(() => requestAnimationFrame(animate360), 100);
 
     } catch (erro) {
       console.error(erro);
-      alert("Erro ao gravar. Tente atualizar a página.");
+      alert("Erro ao gravar o vídeo. Tente novamente.");
       videoLoader.style.display = 'none';
     }
   };
 
+  // SALVAR FOTO (Garantindo qualidade máxima)
   document.querySelector('#btn-screenshot').onclick = async () => {
-    const mvDataUrl = mv.toDataURL('image/png');
-    const img3d = new Image();
-    img3d.onload = () => {
-      const compCanvas = document.createElement('canvas');
-      compCanvas.width = img3d.width;
-      compCanvas.height = img3d.height;
-      const ctx = compCanvas.getContext('2d');
-      renderCompositeFrame(ctx, compCanvas.width, compCanvas.height, img3d);
-      const a = document.createElement('a');
-      a.download = 'foto-caneca.png';
-      a.href = compCanvas.toDataURL('image/png');
-      a.click();
-    };
-    img3d.src = mvDataUrl;
+    const mvCanvas = mv.shadowRoot.querySelector('canvas');
+    if (!mvCanvas) return;
+    
+    const compCanvas = document.createElement('canvas');
+    compCanvas.width = mvCanvas.width;
+    compCanvas.height = mvCanvas.height;
+    const ctx = compCanvas.getContext('2d');
+    
+    // Mistura o fundo com a caneca
+    if (hasCustomBg) {
+      if (currentBgImage) {
+        const scale = Math.max(compCanvas.width / currentBgImage.width, compCanvas.height / currentBgImage.height);
+        const x = (compCanvas.width / 2) - (currentBgImage.width / 2) * scale;
+        const y = (compCanvas.height / 2) - (currentBgImage.height / 2) * scale;
+        ctx.drawImage(currentBgImage, x, y, currentBgImage.width * scale, currentBgImage.height * scale);
+      } else {
+        ctx.fillStyle = currentBgColor;
+        ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+      }
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+    }
+    
+    ctx.drawImage(mvCanvas, 0, 0, compCanvas.width, compCanvas.height);
+
+    const a = document.createElement('a');
+    a.download = 'foto-caneca.png';
+    a.href = compCanvas.toDataURL('image/png');
+    a.click();
   };
 </script>
 </body>
