@@ -14,7 +14,7 @@
   
   <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador de Mockup 360° Alta Resolução</h1>
 
-  <div id="container-3d" style="position: relative; border-radius: 15px; overflow: hidden; border: 2px solid #eee; background: #ffffff; margin-bottom: 25px; height: 500px;">
+  <div id="container-3d" style="position: relative; border-radius: 15px; overflow: hidden; border: 2px solid #eee; background: #ffffff; margin-bottom: 25px; width: 100%; aspect-ratio: 16 / 9;">
     
     <label for="upload-fundo" style="position: absolute; top: 15px; right: 15px; z-index: 10; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">
       🖼️ Trocar Fundo do Cenário
@@ -36,14 +36,14 @@
 
     <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
       <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto HD Perfeita</button>
-      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Real-Time (10s HD)</button>
+      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Suave (10s - HD)</button>
     </div>
 
     <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
        <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO HD (10 SEG)</span>
+       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO (10 SEG)</span>
        <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">10s</span>
-       <small style="color: #888;">Garantindo o giro e as proporções exatas...</small>
+       <small style="color: #888;">Garantindo proporção 16:9 perfeita...</small>
     </div>
   </div>
 
@@ -171,17 +171,11 @@
       ctx.fillRect(0, 0, width, height);
     }
 
-    // CÁLCULO DE PROPORÇÃO PARA NÃO AMASSAR A CANECA
-    const scale3D = Math.min(width / sourceImage.width, height / sourceImage.height);
-    const drawW = sourceImage.width * scale3D;
-    const drawH = sourceImage.height * scale3D;
-    const dx = (width - drawW) / 2;
-    const dy = (height - drawH) / 2;
-    
-    ctx.drawImage(sourceImage, dx, dy, drawW, drawH);
+    // A CANECA É CARIMBADA SEM CÁLCULOS QUE AMASSAM
+    ctx.drawImage(sourceImage, 0, 0, width, height);
   }
 
-  // FOTO HD (VERSÃO ESTÁVEL V6)
+  // FOTO (1920x1080)
   document.querySelector('#btn-screenshot').onclick = async () => {
     const blob = await mv.toBlob({ idealAspect: false });
     const url = URL.createObjectURL(blob);
@@ -204,7 +198,7 @@
     img3d.src = url;
   };
 
-  // VÍDEO 360° (VERSÃO ESTÁVEL V6 + 10 SEGUNDOS + 1920x1080)
+  // VÍDEO (1920x1080 - 10s)
   document.querySelector('#btn-video').onclick = async () => {
     const mvCanvas = mv.shadowRoot.querySelector('canvas');
     if (!mvCanvas) return;
@@ -240,7 +234,7 @@
 
     recorder.start();
 
-    const duration = 10000; 
+    const duration = 10000; // 10 segundos
     let startTime = null;
 
     function renderLoop(time) {
