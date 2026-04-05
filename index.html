@@ -182,8 +182,8 @@
     const img3d = new Image();
     img3d.onload = () => {
       const photoCanvas = document.createElement('canvas');
-      photoCanvas.width = 1920; 
-      photoCanvas.height = 1080;
+      photoCanvas.width = 3840; 
+      photoCanvas.height = 2160;
       const ctx = photoCanvas.getContext('2d');
       
       drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
@@ -210,11 +210,11 @@
     mv.interpolationDecay = 0; 
 
     const captureCanvas = document.createElement('canvas');
-    captureCanvas.width = 1080; 
+    captureCanvas.width = 1920; 
     captureCanvas.height = 1080;
     const ctx = captureCanvas.getContext('2d');
 
-    const stream = captureCanvas.captureStream(30);
+    const stream = captureCanvas.captureStream(40);
     const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 });
     const chunks = [];
 
