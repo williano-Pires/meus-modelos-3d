@@ -36,7 +36,7 @@
 
     <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
       <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto HD Perfeita</button>
-      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Suave (10s)</button>
+      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Suave (10s - 1920x1080)</button>
     </div>
 
     <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
@@ -171,7 +171,13 @@
       ctx.fillRect(0, 0, width, height);
     }
 
-    ctx.drawImage(sourceImage, 0, 0, width, height);
+    // A centralização do objeto 3D
+    const drawWidth = height; 
+    const drawHeight = height; 
+    const dx = (width - drawWidth) / 2;
+    const dy = 0;
+
+    ctx.drawImage(sourceImage, dx, dy, drawWidth, drawHeight);
   }
 
   // FOTO HD (VERSÃO ESTÁVEL V6)
@@ -182,8 +188,8 @@
     const img3d = new Image();
     img3d.onload = () => {
       const photoCanvas = document.createElement('canvas');
-      photoCanvas.width = 3840; 
-      photoCanvas.height = 2160;
+      photoCanvas.width = 1920; 
+      photoCanvas.height = 1080;
       const ctx = photoCanvas.getContext('2d');
       
       drawComposite(ctx, photoCanvas.width, photoCanvas.height, img3d);
@@ -197,7 +203,7 @@
     img3d.src = url;
   };
 
-  // VÍDEO 360° (VERSÃO ESTÁVEL V6 + 10 SEGUNDOS)
+  // VÍDEO 360° (VERSÃO ESTÁVEL V6 + 10 SEGUNDOS + 1920x1080)
   document.querySelector('#btn-video').onclick = async () => {
     const mvCanvas = mv.shadowRoot.querySelector('canvas');
     if (!mvCanvas) return;
@@ -210,12 +216,13 @@
     mv.interpolationDecay = 0; 
 
     const captureCanvas = document.createElement('canvas');
+    // ALTERADO PARA 1920x1080 AQUI
     captureCanvas.width = 1920; 
     captureCanvas.height = 1080;
     const ctx = captureCanvas.getContext('2d');
 
-    const stream = captureCanvas.captureStream(40);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 });
+    const stream = captureCanvas.captureStream(30);
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 });
     const chunks = [];
 
     recorder.ondataavailable = e => chunks.push(e.data);
@@ -233,7 +240,6 @@
 
     recorder.start();
 
-    // AQUI ESTÁ A ALTERAÇÃO PARA 10 SEGUNDOS
     const duration = 10000; 
     let startTime = null;
 
@@ -252,7 +258,6 @@
       mv.cameraOrbit = `${currentAngle}deg ${orbit.phi}rad ${orbit.radius}m`;
       mv.jumpCameraToGoal();
 
-      // Atualiza o relógio para 10 segundos
       timerText.innerText = Math.ceil(10 - (progress * 10)) + 's';
 
       requestAnimationFrame(renderLoop);
