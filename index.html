@@ -12,7 +12,7 @@
 
 <div style="text-align: center; font-family: 'Segoe UI', sans-serif; max-width: 900px; width: 100%; border: 1px solid #ddd; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); background-color: #ffffff;">
   
-  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador de Mockup 360° Alta Resolução</h1>
+  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador de Mockup 360° Full HD</h1>
 
   <div id="container-3d" style="position: relative; border-radius: 15px; overflow: hidden; border: 2px solid #eee; background: #ffffff; margin-bottom: 25px; width: 100%; aspect-ratio: 16 / 9;">
     
@@ -35,15 +35,15 @@
     </model-viewer>
 
     <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
-      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto Ultra HD (4K)</button>
-      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Studio (10s)</button>
+      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Gerar Imagem Full HD</button>
+      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Gerar Vídeo 360° (10s HD)</button>
     </div>
 
     <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
        <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">MOTOR DE VÍDEO ATIVO</span>
+       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO VÍDEO DEFINITIVO...</span>
        <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">10s</span>
-       <small style="color: #888;">Sincronizando pixels com a Placa de Vídeo...</small>
+       <small style="color: #888;">Renderizando frames em Full HD...</small>
     </div>
   </div>
 
@@ -150,19 +150,19 @@
     }
   }
 
-  // O NOVO MOTOR: Pinta os elementos garantindo a proporção original do 3D
-  function drawComposite(ctx, width, height, sourceCanvas) {
+  // APLICADOR DE COMPOSIÇÃO: Mantém proporções e mistura os fundos sem perdas
+  function drawComposite(ctx, width, height, sourceMedia) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);
 
-    // Pinta o Fundo
+    // Fundo
     if (hasCustomBg) {
       if (currentBgImage) {
         const scale = Math.max(width / currentBgImage.width, height / currentBgImage.height);
-        const x = (width / 2) - (currentBgImage.width / 2) * scale;
-        const y = (height / 2) - (currentBgImage.height / 2) * scale;
-        ctx.drawImage(currentBgImage, x, y, currentBgImage.width * scale, currentBgImage.height * scale);
+        const drawW = currentBgImage.width * scale;
+        const drawH = currentBgImage.height * scale;
+        ctx.drawImage(currentBgImage, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
       } else {
         ctx.fillStyle = currentBgColor;
         ctx.fillRect(0, 0, width, height);
@@ -175,41 +175,53 @@
       ctx.fillRect(0, 0, width, height);
     }
 
-    // Carimba a Caneca 3D sem amassar (mantendo a proporção do WebGL)
-    const srcW = sourceCanvas.width;
-    const srcH = sourceCanvas.height;
-    
-    // Zoom sutil de 10% para a caneca preencher melhor a tela de vídeo
-    const scale3D = Math.min(width / srcW, height / srcH) * 1.1; 
+    if (!sourceMedia) return;
+
+    // Caneca Centralizada (sem amassar)
+    const srcW = sourceMedia.width || sourceMedia.naturalWidth || sourceMedia.videoWidth;
+    const srcH = sourceMedia.height || sourceMedia.naturalHeight || sourceMedia.videoHeight;
+    const scale3D = Math.min(width / srcW, height / srcH);
     const drawW = srcW * scale3D;
     const drawH = srcH * scale3D;
-    const dx = (width - drawW) / 2;
-    const dy = (height - drawH) / 2;
-    
-    ctx.drawImage(sourceCanvas, dx, dy, drawW, drawH);
+    ctx.drawImage(sourceMedia, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
   }
 
-  // =============== MOTOR DE VÍDEO ===============
-  let isRecording = false;
-  const captureCanvas = document.createElement('canvas');
-  captureCanvas.width = 1920; 
-  captureCanvas.height = 1080;
-  const captureCtx = captureCanvas.getContext('2d');
-
-  // ESSE É O SEGREDO: O vídeo é gerado exatamento no milissegundo que a placa de vídeo pisca
-  mv.addEventListener('render', () => {
-    if (isRecording) {
-      const webglCanvas = mv.shadowRoot.querySelector('canvas');
-      if (webglCanvas) {
-        drawComposite(captureCtx, captureCanvas.width, captureCanvas.height, webglCanvas);
-      }
-    }
-  });
-
-  document.querySelector('#btn-video').onclick = async () => {
-    videoLoader.style.display = 'flex';
-    isRecording = true;
+  // ==========================================
+  // MOTOR 1: FOTO FULL HD (Extração Profunda)
+  // ==========================================
+  document.querySelector('#btn-screenshot').onclick = async () => {
+    // toBlob puxa o gráfico original com máxima resolução
+    const blob = await mv.toBlob({ idealAspect: true }); 
+    const url = URL.createObjectURL(blob);
+    const img3d = new Image();
     
+    img3d.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920; 
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      
+      drawComposite(ctx, canvas.width, canvas.height, img3d);
+      
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png', 1.0);
+      a.download = 'mockup-foto-FullHD.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    img3d.src = url;
+  };
+
+  // ==========================================
+  // MOTOR 2: VÍDEO 360° (Relógio Atômico)
+  // ==========================================
+  document.querySelector('#btn-video').onclick = async () => {
+    const webglCanvas = mv.shadowRoot.querySelector('canvas');
+    if (!webglCanvas) return;
+
+    videoLoader.style.display = 'flex';
+    
+    // Captura o exato ângulo atual da caneca
     const orbit = mv.getCameraOrbit();
     const startTheta = orbit.theta * (180 / Math.PI); 
     const startPhi = orbit.phi;
@@ -218,28 +230,32 @@
     const oldDecay = mv.interpolationDecay;
     mv.interpolationDecay = 0; // Trava a câmera
 
-    // Pinta o primeiro quadro garantido
-    const webglCanvas = mv.shadowRoot.querySelector('canvas');
-    if (webglCanvas) drawComposite(captureCtx, captureCanvas.width, captureCanvas.height, webglCanvas);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1920; 
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
 
-    // Stream de Video em ALTA QUALIDADE (15 Mbps)
-    const stream = captureCanvas.captureStream(30);
-    let options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 15000000 };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm', videoBitsPerSecond: 15000000 };
+    // Bitrate altíssimo para não granular a estampa
+    const stream = canvas.captureStream(30);
+    let options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 12000000 };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm', videoBitsPerSecond: 12000000 };
+    }
     
     const recorder = new MediaRecorder(stream, options);
     const chunks = [];
 
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
-      isRecording = false;
+      const blob = new Blob(chunks, { type: options.mimeType });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob(chunks, { type: options.mimeType }));
-      a.download = `mockup-360-10s-Studio.webm`;
+      a.href = url;
+      a.download = `mockup-360-10s-FullHD.webm`;
       a.click();
-      videoLoader.style.display = 'none';
+      URL.revokeObjectURL(url);
       
-      // Volta pro lugar que o usuário deixou
+      videoLoader.style.display = 'none';
       mv.interpolationDecay = oldDecay;
       mv.cameraOrbit = `${startTheta}deg ${startPhi}rad ${startRadius}m`;
       mv.jumpCameraToGoal();
@@ -247,55 +263,34 @@
 
     recorder.start();
 
-    const duration = 10000; // 10 segundos EXATOS (10000 milissegundos)
-    let startTime = null;
+    const duration = 10000; // 10 Segundos cravados
+    const startTime = performance.now(); // Relógio real do sistema
 
-    function renderLoop(time) {
-      if (!startTime) startTime = time;
-      
-      // O tempo do vídeo depende apenas do relógio atômico do PC, não dos FPS
-      const progress = (time - startTime) / duration;
-      
-      if (progress > 1) {
-        recorder.stop();
-        return;
-      }
+    function renderLoop(currentTime) {
+      // Calcula o progresso baseado no relógio, impossível de bugar ou acelerar
+      const elapsed = currentTime - startTime;
+      let progress = elapsed / duration;
+      if (progress > 1) progress = 1;
 
-      // Gira +360 graus a partir do clique
+      // Soma o progresso aos 360 graus a partir de onde a caneca parou
       const currentAngle = startTheta + (progress * 360);
       mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
-      mv.jumpCameraToGoal(); // O model-viewer atualiza, dispara o evento 'render', e o canvas é capturado
+      mv.jumpCameraToGoal(); // Atualiza a caneca
 
-      timerText.innerText = Math.max(0, Math.ceil(10 - (progress * 10))) + 's';
+      // Pinta o quadro do vídeo
+      drawComposite(ctx, canvas.width, canvas.height, webglCanvas);
+      
+      // Atualiza o painel para o usuário ver
+      timerText.innerText = Math.ceil(10 - (progress * 10)) + 's';
 
-      requestAnimationFrame(renderLoop);
+      if (progress < 1) {
+        requestAnimationFrame(renderLoop);
+      } else {
+        recorder.stop();
+      }
     }
 
     requestAnimationFrame(renderLoop);
-  };
-
-  // =============== FOTO 4K ===============
-  document.querySelector('#btn-screenshot').onclick = async () => {
-    // Dá um "susto" no modelo para ele garantir que está focado
-    mv.jumpCameraToGoal();
-    await new Promise(r => requestAnimationFrame(r)); 
-
-    const webglCanvas = mv.shadowRoot.querySelector('canvas');
-    if (!webglCanvas) return;
-
-    // Canvas da Foto Gigante (4K)
-    const photoCanvas = document.createElement('canvas');
-    photoCanvas.width = 3840; 
-    photoCanvas.height = 2160;
-    const ctx = photoCanvas.getContext('2d');
-    
-    // Usa o mesmo motor perfeito de fundo para não amassar
-    drawComposite(ctx, photoCanvas.width, photoCanvas.height, webglCanvas);
-    
-    const a = document.createElement('a');
-    a.href = photoCanvas.toDataURL('image/png', 1.0); // Qualidade Máxima do PNG
-    a.download = 'mockup-foto-4K.png';
-    a.click();
   };
 </script>
 </body>
