@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Mockup 3D Premium</title>
+    <title>Estúdio de Mockup 3D Premium</title>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -13,39 +13,41 @@
 
 <div style="text-align: center; font-family: 'Segoe UI', sans-serif; max-width: 900px; width: 100%; border: 1px solid #ddd; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); background-color: #ffffff;">
   
-  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador de Mockup 360° Studio (Full HD)</h1>
+  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador de Mockup 360° (Renderização Offline)</h1>
 
-  <div id="container-3d" style="position: relative; border-radius: 15px; overflow: hidden; border: 2px solid #eee; background: #ffffff; margin-bottom: 25px; width: 100%; aspect-ratio: 16 / 9;">
-    
-    <label for="upload-fundo" style="position: absolute; top: 15px; right: 15px; z-index: 10; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">
-      🖼️ Trocar Fundo do Cenário
-    </label>
-    <input type="file" id="upload-fundo" accept="image/*" style="display: none;">
+  <div id="wrapper-3d" style="position: relative; width: 100%; aspect-ratio: 16/9; background: #ffffff; border-radius: 15px; overflow: hidden; border: 2px solid #eee; margin-bottom: 25px;">
+      
+      <label for="upload-fundo" style="position: absolute; top: 15px; right: 15px; z-index: 10; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">
+        🖼️ Trocar Fundo do Cenário
+      </label>
+      <input type="file" id="upload-fundo" accept="image/*" style="display: none;">
 
-    <model-viewer id="cup-viewer" 
-      src="texturas.glb" 
-      environment-image="https://modelviewer.dev/shared-assets/environments/lightroom_14b.hdr"
-      camera-controls 
-      interaction-prompt="none"
-      shadow-intensity="1.5" 
-      shadow-softness="1"
-      exposure="1.2" 
-      tone-mapping="commerce"
-      camera-orbit="0deg 75deg 105%"
-      style="width: 100%; height: 100%; background-color: transparent;">
-    </model-viewer>
+      <div id="container-3d" style="width: 100%; height: 100%; position: relative;">
+        <model-viewer id="cup-viewer" 
+          src="texturas.glb" 
+          environment-image="https://modelviewer.dev/shared-assets/environments/lightroom_14b.hdr"
+          camera-controls 
+          interaction-prompt="none"
+          shadow-intensity="1.5" 
+          shadow-softness="1"
+          exposure="1.2" 
+          tone-mapping="commerce"
+          camera-orbit="0deg 75deg 105%"
+          style="width: 100%; height: 100%; background-color: transparent;">
+        </model-viewer>
+      </div>
 
-    <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
-      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto Ultra HD</button>
-      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Vídeo 360° Offline (7s)</button>
-    </div>
+      <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
+        <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Gerar Imagem Full HD</button>
+        <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Renderizar Vídeo (10s)</button>
+      </div>
 
-    <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
-       <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-       <span id="loader-title" style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">PREPARANDO ESTÚDIO FULL HD...</span>
-       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">0%</span>
-       <small style="color: #888;">Renderização quadro a quadro. Isso pode levar alguns segundos.</small>
-    </div>
+      <div id="loader-tela" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
+         <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
+         <span id="loader-texto" style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">INICIANDO MOTOR DE RENDERIZAÇÃO...</span>
+         <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">0%</span>
+         <small style="color: #ccc;">Isso garante qualidade máxima sem travamentos.</small>
+      </div>
   </div>
 
   <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
@@ -83,8 +85,8 @@
 <script>
   const mv = document.querySelector('#cup-viewer');
   const container3d = document.querySelector('#container-3d');
-  const videoLoader = document.querySelector('#video-loader');
-  const loaderTitle = document.querySelector('#loader-title');
+  const loaderTela = document.querySelector('#loader-tela');
+  const loaderTexto = document.querySelector('#loader-texto');
   const timerText = document.querySelector('#timer-text');
   let cropper = null;
 
@@ -94,15 +96,13 @@
 
   const toRGB = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255, 1];
 
-  // =====================================
-  // GERENCIAMENTO DE CORES (Corrigido)
-  // =====================================
+  // 1. SISTEMA DE CORES
   document.querySelector('#color-handle').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_interna")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-body').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_caneca")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-stamp').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_arte")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   document.querySelector('#color-base').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_base")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   
-  // Aqui está a correção do Cenário, atualizando a tela na hora
+  // 2. SISTEMA DE CENÁRIO (FUNDO)
   document.querySelector('#color-bg').oninput = (e) => {
     hasCustomBg = true;
     currentBgColor = e.target.value;
@@ -120,8 +120,8 @@
       container3d.style.backgroundSize = 'cover'; 
       container3d.style.backgroundPosition = 'center';
       const img = new Image();
-      img.src = url;
       img.onload = () => { currentBgImage = img; };
+      img.src = url;
     }
   };
 
@@ -135,9 +135,7 @@
     });
   };
 
-  // =====================================
-  // CROPPER E TEXTURA
-  // =====================================
+  // 3. SISTEMA DE ARTE E TEXTURA
   document.querySelector('#upload-arte').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -158,20 +156,16 @@
     const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_arte"));
     if (m && m.pbrMetallicRoughness.baseColorTexture) {
       m.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
-      // Mantém a estampa ajustada sem repetir
       m.pbrMetallicRoughness.baseColorTexture.texture.transform = {scale:{u:1,v:1}, offset:{u:0,v:0}};
     }
   }
 
-  // =====================================
-  // MOTOR DE DESENHO E COMPOSIÇÃO FULL HD
-  // =====================================
-  function drawComposite(ctx, width, height, sourceCanvas) {
+  // 4. MOTOR DE DESENHO COMPOSITO (Junta Fundo + 3D)
+  function drawComposite(ctx, width, height, mugImage) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.clearRect(0, 0, width, height);
-
-    // Aplica o cenário na resolução máxima
+    
+    // Desenha o cenário real no canvas
     if (hasCustomBg) {
       if (currentBgImage) {
         const scale = Math.max(width / currentBgImage.width, height / currentBgImage.height);
@@ -190,64 +184,60 @@
       ctx.fillRect(0, 0, width, height);
     }
 
-    // Carimba o Modelo 3D perfeitamente centralizado
-    if (sourceCanvas) {
-      const srcW = sourceCanvas.width;
-      const srcH = sourceCanvas.height;
-      const scale3D = Math.min(width / srcW, height / srcH);
-      const drawW = srcW * scale3D;
-      const drawH = srcH * scale3D;
-      ctx.drawImage(sourceCanvas, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
-    }
+    // Pinta a Caneca
+    ctx.drawImage(mugImage, 0, 0, width, height);
   }
 
-  // =====================================
-  // BOTÃO: FOTO ULTRA HD
-  // =====================================
+  // =========================================================================
+  // BOTÃO: FOTO FULL HD
+  // =========================================================================
   document.querySelector('#btn-screenshot').onclick = async () => {
-    videoLoader.style.display = 'flex';
-    loaderTitle.innerText = "CAPTURANDO FOTO ULTRA HD...";
-    timerText.innerText = "⏳";
+    if(!mv.model) return;
+    loaderTela.style.display = 'flex';
+    loaderTexto.innerText = "PROCESSANDO FOTO FULL HD...";
+    timerText.innerText = "📸";
 
-    // O "Truque do Estúdio": Força a caneca a renderizar em 1920x1080 escondida
-    const oldPosition = mv.style.position;
-    mv.style.position = 'absolute';
-    mv.style.width = '1920px';
-    mv.style.height = '1080px';
+    // Força o 3D a renderizar em 1920x1080 escondido
+    const oldW = mv.style.width; const oldH = mv.style.height;
+    mv.style.width = '1920px'; mv.style.height = '1080px';
     
-    // Dá 500ms de calma para a placa de vídeo carregar a super resolução
-    await new Promise(r => setTimeout(r, 500)); 
+    await new Promise(r => setTimeout(r, 200)); // Tempo para GPU aplicar o tamanho
+    mv.jumpCameraToGoal(); // Força atualização visual
 
-    const webglCanvas = mv.shadowRoot.querySelector('canvas');
-    const photoCanvas = document.createElement('canvas');
-    photoCanvas.width = 1920; 
-    photoCanvas.height = 1080;
+    // Extrai a imagem com fundo transparente e proporção 16:9
+    const imgUrl = mv.toDataURL('image/png');
+    const img = new Image();
     
-    drawComposite(photoCanvas.getContext('2d'), photoCanvas.width, photoCanvas.height, webglCanvas);
-    
-    const a = document.createElement('a');
-    a.href = photoCanvas.toDataURL('image/png', 1.0);
-    a.download = 'mockup-foto-HD.png';
-    a.click();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920; 
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      
+      drawComposite(ctx, 1920, 1080, img);
+      
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png', 1.0);
+      a.download = 'mockup-foto-HD.png';
+      a.click();
 
-    // Devolve o estúdio ao normal
-    mv.style.width = '100%';
-    mv.style.height = '100%';
-    mv.style.position = oldPosition;
-    videoLoader.style.display = 'none';
+      mv.style.width = oldW; mv.style.height = oldH;
+      loaderTela.style.display = 'none';
+    };
+    img.src = imgUrl;
   };
 
-  // =====================================
-  // BOTÃO: VÍDEO 360° OFFLINE (Motor Whammy - O Definitivo)
-  // =====================================
+  // =========================================================================
+  // BOTÃO: VÍDEO 360 OFFLINE DEFINITIVO (Whammy.js)
+  // =========================================================================
   document.querySelector('#btn-video').onclick = async () => {
     if (!mv.model) return;
 
-    videoLoader.style.display = 'flex';
-    loaderTitle.innerText = "RENDERIZANDO VÍDEO (7s)...";
+    loaderTela.style.display = 'flex';
+    loaderTexto.innerText = "INICIANDO MOTOR DE RENDEREZAÇÃO...";
     timerText.innerText = "0%";
     
-    // Grava de onde o usuário parou
+    // Captura configurações de onde o cliente parou
     const orbit = mv.getCameraOrbit();
     const startTheta = orbit.theta * (180 / Math.PI); 
     const startPhi = orbit.phi;
@@ -256,72 +246,81 @@
     const oldDecay = mv.interpolationDecay;
     mv.interpolationDecay = 0; 
 
-    // Força a caneca a renderizar gigante
-    const oldPosition = mv.style.position;
-    mv.style.position = 'absolute';
-    mv.style.width = '1920px';
-    mv.style.height = '1080px';
+    // Força o 3D a operar em Full HD nos bastidores
+    const oldW = mv.style.width; const oldH = mv.style.height;
+    mv.style.width = '1920px'; mv.style.height = '1080px';
 
-    // Respira
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 200));
 
-    // Configura o compilador de vídeo e o Canvas
     const canvas = document.createElement('canvas');
     canvas.width = 1920; 
     canvas.height = 1080;
     const ctx = canvas.getContext('2d');
 
-    const videoEncoder = new Whammy.Video(30); // 30 FPS garantidos
+    // Inicializa o compilador de Vídeo (30 FPS)
+    const videoEncoder = new Whammy.Video(30);
 
-    const duration = 7; // 7 Segundos exatos
-    const totalFrames = duration * 30; // 210 quadros
+    const duration = 10; // Segundos
+    const totalFrames = duration * 30; // 300 Fotos exatas
+    
+    // Loop Assíncrono com Pausas (Permite que a GPU desenhe frame a frame)
+    async function renderOffline() {
+        for (let i = 0; i <= totalFrames; i++) {
+            const progress = i / totalFrames;
+            
+            // 1. Move a caneca e trava
+            const currentAngle = startTheta + (progress * 360);
+            mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
+            mv.jumpCameraToGoal();
 
-    // Loop com calma (Offline Render)
-    for (let i = 0; i <= totalFrames; i++) {
-        const progress = i / totalFrames;
-        
-        // Posição atual da câmera
-        const currentAngle = startTheta + (progress * 360);
-        mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
-        mv.jumpCameraToGoal();
+            // 2. Espera o modelo 3D informar que o quadro foi desenhado na placa de vídeo
+            await new Promise(resolve => {
+                mv.addEventListener('render', resolve, { once: true });
+            });
+            
+            // 3. Extrai a foto exata (aqui não tem como dar erro de cor ou textura)
+            const frameUrl = mv.toDataURL('image/png');
+            const frameImg = new Image();
+            
+            await new Promise(resolve => {
+                frameImg.onload = () => {
+                    // Junta com o fundo
+                    drawComposite(ctx, 1920, 1080, frameImg);
+                    // Adiciona ao rolo de filme
+                    videoEncoder.add(ctx);
+                    resolve();
+                };
+                frameImg.src = frameUrl;
+            });
 
-        // ESPERA A PLACA DE VÍDEO DESENHAR (O segredo da renderização offline)
-        await new Promise(r => setTimeout(r, 50)); 
+            // Atualiza a tela de carregamento
+            timerText.innerText = Math.round(progress * 100) + '%';
+            loaderTexto.innerText = "CAPTURANDO QUADROS (FULL HD)...";
+        }
 
-        const webglCanvas = mv.shadowRoot.querySelector('canvas');
-        drawComposite(ctx, canvas.width, canvas.height, webglCanvas);
+        // Finalizou as 300 fotos, agora compila!
+        loaderTexto.innerText = "COMPILANDO VÍDEO FINAL...";
+        timerText.innerText = "⏳";
 
-        // Adiciona a foto perfeita no vídeo
-        videoEncoder.add(ctx);
+        videoEncoder.compile(false, function(outputBlob) {
+            const url = URL.createObjectURL(outputBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mockup-360-10s.webm`; // Formato universal web padrão ouro
+            a.click();
+            URL.revokeObjectURL(url);
 
-        // Mostra a porcentagem real pro usuário
-        timerText.innerText = Math.round(progress * 100) + '%';
+            // Devolve as configurações ao normal
+            mv.style.width = oldW; mv.style.height = oldH;
+            mv.interpolationDecay = oldDecay;
+            mv.cameraOrbit = `${startTheta}deg ${startPhi}rad ${startRadius}m`;
+            mv.jumpCameraToGoal();
+            loaderTela.style.display = 'none';
+        });
     }
 
-    loaderTitle.innerText = "COMPILANDO ARQUIVO DE VÍDEO...";
-    timerText.innerText = "⏳";
-
-    // Compila e entrega o vídeo
-    videoEncoder.compile(false, function(output) {
-        const url = URL.createObjectURL(output);
-        const a = document.createElement('a');
-        a.href = url;
-        
-        // Whammy gera WebM (O formato web padrão de mais alta qualidade)
-        a.download = `mockup-360-7s.webm`; 
-        a.click();
-        URL.revokeObjectURL(url);
-
-        // Devolve o sistema pro estado original
-        mv.style.width = '100%';
-        mv.style.height = '100%';
-        mv.style.position = oldPosition;
-        mv.interpolationDecay = oldDecay;
-        mv.cameraOrbit = `${startTheta}deg ${startPhi}rad ${startRadius}m`;
-        mv.jumpCameraToGoal();
-
-        videoLoader.style.display = 'none';
-    });
+    // Inicia a gravação
+    renderOffline();
   };
 </script>
 </body>
