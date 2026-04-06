@@ -3,56 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estúdio de Mockup 3D</title>
+    <title>Estúdio Mockup Pro (FFmpeg)</title>
+    
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 </head>
 <body style="margin: 0; padding: 20px; background-color: #f0f2f5; display: flex; justify-content: center;">
 
 <div style="text-align: center; font-family: 'Segoe UI', sans-serif; max-width: 900px; width: 100%; border: 1px solid #ddd; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); background-color: #ffffff;">
   
-  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador de Mockup 360° Studio</h1>
+  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Gerador Mockup MP4 (Nível Pacdora)</h1>
 
-  <div id="container-3d" style="position: relative; border-radius: 15px; overflow: hidden; border: 2px solid #eee; background-color: #ffffff; background-size: cover; background-position: center; margin-bottom: 25px; width: 100%; aspect-ratio: 16 / 9;">
-    
-    <label for="upload-fundo" style="position: absolute; top: 15px; right: 15px; z-index: 10; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">
-      🖼️ Trocar Fundo
-    </label>
-    <input type="file" id="upload-fundo" accept="image/*" style="display: none;">
+  <div id="wrapper-3d" style="position: relative; width: 100%; aspect-ratio: 16/9; background: #ffffff; border-radius: 15px; overflow: hidden; border: 2px solid #eee; margin-bottom: 25px;">
+      
+      <label for="upload-fundo" style="position: absolute; top: 15px; right: 15px; z-index: 10; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">🖼️ Trocar Fundo</label>
+      <input type="file" id="upload-fundo" accept="image/*" style="display: none;">
 
-    <model-viewer id="cup-viewer" 
-      src="texturas.glb" 
-      environment-image="https://modelviewer.dev/shared-assets/environments/lightroom_14b.hdr"
-      camera-controls 
-      interaction-prompt="none"
-      shadow-intensity="1.5" 
-      shadow-softness="1"
-      exposure="1.2" 
-      tone-mapping="commerce"
-      camera-orbit="0deg 75deg 105%"
-      style="width: 100%; height: 100%; background-color: transparent;">
-    </model-viewer>
+      <canvas id="bg-canvas" width="1920" height="1080" style="display: none;"></canvas>
+      <div id="container-3d" style="width: 100%; height: 100%; position: relative;">
+        <model-viewer id="cup-viewer" 
+          src="texturas.glb" 
+          environment-image="https://modelviewer.dev/shared-assets/environments/lightroom_14b.hdr"
+          camera-controls interaction-prompt="none"
+          shadow-intensity="1.5" shadow-softness="1" exposure="1.2" tone-mapping="commerce"
+          camera-orbit="0deg 75deg 105%"
+          style="width: 100%; height: 100%; background-color: transparent;">
+        </model-viewer>
+      </div>
 
-    <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
-      <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Baixar Imagem Perfeita</button>
-      <button id="btn-video" style="background: #2ecc71; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(46,204,113,0.3);">🎥 Baixar Vídeo (10s Suave)</button>
-    </div>
+      <div style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
+        <button id="btn-screenshot" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(52,152,219,0.3);">📸 Foto Alta Qualidade</button>
+        <button id="btn-video" style="background: #e74c3c; color: white; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; box-shadow: 0 4px 15px rgba(231,76,60,0.3);">🎥 Gerar MP4 Pro (10s)</button>
+      </div>
 
-    <div id="video-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
-       <div style="border: 5px solid #333; border-top: 5px solid #2ecc71; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-       <span style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">GRAVANDO GIRO AUTOMÁTICO...</span>
-       <span id="timer-text" style="color: #2ecc71; font-size: 30px; font-weight: bold; margin: 10px 0;">10s</span>
-       <small style="color: #ccc;">Mantendo a qualidade máxima da estampa.</small>
-    </div>
+      <div id="loader-tela" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20; flex-direction: column; justify-content: center; align-items: center; color: white;">
+         <div style="border: 5px solid #333; border-top: 5px solid #e74c3c; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
+         <span id="loader-texto" style="font-weight: bold; font-size: 20px; letter-spacing: 1px;">CARREGANDO MOTOR DE VÍDEO...</span>
+         <span id="timer-text" style="color: #e74c3c; font-size: 30px; font-weight: bold; margin: 10px 0;">0%</span>
+         <small id="loader-detalhe" style="color: #ccc;">Baixando dependências do servidor...</small>
+      </div>
   </div>
 
   <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
 
   <div style="background: #f8f9fa; border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid #eee;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <span style="font-weight: bold; color: #444;">🎨 Arte da Caneca</span>
-      <label for="upload-arte" style="background: #f39c12; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">📂 Enviar Arte</label>
+      <span style="font-weight: bold; color: #444;">🎨 Sua Arte</span>
+      <label for="upload-arte" style="background: #f39c12; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">📂 Selecionar Imagem</label>
       <input type="file" id="upload-arte" accept="image/*" style="display: none;">
     </div>
     <div style="height: 200px; background: #e9ecef; border-radius: 10px; overflow: hidden; border: 2px dashed #cbd5e0; display: flex; align-items: center; justify-content: center;">
@@ -66,24 +67,21 @@
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
     <div style="background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #eee;"><small>Interno/Alça</small><input type="color" id="color-handle" value="#ffffff" style="width: 100%; height: 35px; border: none; cursor: pointer; background: none;"></div>
-    <div style="background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #eee;"><small>Cor Caneca</small><input type="color" id="color-body" value="#ffffff" style="width: 100%; height: 35px; border: none; cursor: pointer; background: none;"></div>
-    <div style="background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #eee;"><small>Fundo Arte</small><input type="color" id="color-stamp" value="#ffffff" style="width: 100%; height: 35px; border: none; cursor: pointer; background: none;"></div>
-    <div style="background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #eee;"><small>Base Apoio</small><input type="color" id="color-base" value="#e0e0e0" style="width: 100%; height: 35px; border: none; cursor: pointer; background: none;"></div>
-    <div style="background: #fff; padding: 10px; border-radius: 10px; border: 2px solid #3498db;"><small style="color: #3498db; font-weight: bold;">Cor Cenário</small><input type="color" id="color-bg" value="#ffffff" style="width: 100%; height: 35px; border: none; cursor: pointer; background: none;"></div>
+    <div style="background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #eee;"><small>Cor Cenário</small><input type="color" id="color-bg" value="#ffffff" style="width: 100%; height: 35px; border: none; cursor: pointer; background: none;"></div>
   </div>
-
-  <label style="background: #2c3e50; color: white; padding: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-weight: bold; transition: 0.3s;">
-      <input type="checkbox" id="metalic-toggle" style="width: 20px; height: 20px;"> ✨ EFEITO METALIZADO
-  </label>
 </div>
 
 <script>
+  const { FFmpeg } = window.FFmpeg;
+  let ffmpeg = null;
+
   const mv = document.querySelector('#cup-viewer');
-  const container3d = document.querySelector('#container-3d');
-  const videoLoader = document.querySelector('#video-loader');
+  const loaderTela = document.querySelector('#loader-tela');
+  const loaderTexto = document.querySelector('#loader-texto');
   const timerText = document.querySelector('#timer-text');
+  const loaderDetalhe = document.querySelector('#loader-detalhe');
   let cropper = null;
 
   let currentBgColor = '#ffffff';
@@ -92,20 +90,14 @@
 
   const toRGB = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255, 1];
 
-  // ==========================================
-  // MATERIAIS, CORES E FUNDO
-  // ==========================================
   document.querySelector('#color-handle').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_interna")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
-  document.querySelector('#color-body').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_caneca")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
-  document.querySelector('#color-stamp').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_arte")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
-  document.querySelector('#color-base').oninput = (e) => { const m = mv.model?.materials.find(mat => mat.name.toLowerCase().includes("cor_base")); if(m) m.pbrMetallicRoughness.setBaseColorFactor(toRGB(e.target.value)); };
   
   document.querySelector('#color-bg').oninput = (e) => {
     hasCustomBg = true;
     currentBgColor = e.target.value;
     currentBgImage = null;
-    container3d.style.backgroundImage = 'none';
-    container3d.style.backgroundColor = currentBgColor;
+    document.querySelector('#container-3d').style.backgroundImage = 'none';
+    document.querySelector('#container-3d').style.backgroundColor = currentBgColor;
   };
   
   document.querySelector('#upload-fundo').onchange = (e) => {
@@ -113,28 +105,13 @@
     if(file) { 
       hasCustomBg = true;
       const url = URL.createObjectURL(file);
-      container3d.style.backgroundImage = `url(${url})`; 
-      container3d.style.backgroundSize = 'cover'; 
-      container3d.style.backgroundPosition = 'center';
-      const img = new Image();
-      img.onload = () => { currentBgImage = img; };
-      img.src = url;
+      document.querySelector('#container-3d').style.backgroundImage = `url(${url})`; 
+      document.querySelector('#container-3d').style.backgroundSize = 'cover'; 
+      document.querySelector('#container-3d').style.backgroundPosition = 'center';
+      const img = new Image(); img.onload = () => { currentBgImage = img; }; img.src = url;
     }
   };
 
-  document.querySelector('#metalic-toggle').onchange = (e) => {
-    if(!mv.model) return;
-    mv.model.materials.forEach(m => {
-      if(!m.name.toLowerCase().includes("cor_base")) {
-        m.pbrMetallicRoughness.setMetallicFactor(e.target.checked ? 1 : 0.1);
-        m.pbrMetallicRoughness.setRoughnessFactor(e.target.checked ? 0.05 : 0.4);
-      }
-    });
-  };
-
-  // ==========================================
-  // ARTE E TEXTURA (Com Trava de Posição)
-  // ==========================================
   document.querySelector('#upload-arte').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -155,152 +132,151 @@
     const m = mv.model.materials.find(mat => mat.name.toLowerCase().includes("cor_arte"));
     if (m && m.pbrMetallicRoughness.baseColorTexture) {
       m.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
-      // Evita que a arte fique se repetindo ou saia do lugar
       m.pbrMetallicRoughness.baseColorTexture.texture.transform = {scale:{u:1,v:1}, offset:{u:0,v:0}};
     }
   }
 
-  // ==========================================
-  // DESENHO (Junta Fundo + Caneca sem distorcer)
-  // ==========================================
-  function drawComposite(ctx, width, height, sourceCanvas) {
+  function drawFrame(ctx, width, height, modelCanvas) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Pinta o cenário
     if (hasCustomBg) {
       if (currentBgImage) {
         const scale = Math.max(width / currentBgImage.width, height / currentBgImage.height);
-        const drawW = currentBgImage.width * scale;
-        const drawH = currentBgImage.height * scale;
-        ctx.drawImage(currentBgImage, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
+        const w = currentBgImage.width * scale;
+        const h = currentBgImage.height * scale;
+        ctx.drawImage(currentBgImage, (width - w) / 2, (height - h) / 2, w, h);
       } else {
         ctx.fillStyle = currentBgColor;
         ctx.fillRect(0, 0, width, height);
       }
     } else {
-      const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/2);
-      gradient.addColorStop(0, "#ffffff");
-      gradient.addColorStop(1, "#e0e0e0");
-      ctx.fillStyle = gradient;
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
     }
 
-    // 2. Cola a caneca centralizada
-    if (sourceCanvas) {
-        const srcW = sourceCanvas.width || sourceCanvas.clientWidth || 800;
-        const srcH = sourceCanvas.height || sourceCanvas.clientHeight || 450;
-        const scale3D = Math.min(width / srcW, height / srcH);
-        const drawW = srcW * scale3D;
-        const drawH = srcH * scale3D;
-        ctx.drawImage(sourceCanvas, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
+    if (modelCanvas) {
+        const scale3D = Math.min(width / modelCanvas.width, height / modelCanvas.height);
+        const w = modelCanvas.width * scale3D;
+        const h = modelCanvas.height * scale3D;
+        ctx.drawImage(modelCanvas, (width - w) / 2, (height - h) / 2, w, h);
     }
   }
 
-  // ==========================================
-  // IMAGEM: A versão exata que funcionou perfeita!
-  // ==========================================
   document.querySelector('#btn-screenshot').onclick = async () => {
     if(!mv.model) return;
-    const btn = document.querySelector('#btn-screenshot');
-    btn.innerText = "⏳ Extraindo...";
-    
-    // toBlob puxa o 3D original com a estampa intacta
     const blob = await mv.toBlob({ idealAspect: true });
     const imgUrl = URL.createObjectURL(blob);
     const img = new Image();
     
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 1920; 
-      canvas.height = 1080;
-      const ctx = canvas.getContext('2d');
-      
-      drawComposite(ctx, 1920, 1080, img);
-      
+      canvas.width = 1920; canvas.height = 1080;
+      drawFrame(canvas.getContext('2d'), 1920, 1080, img);
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png', 1.0);
       a.download = 'mockup-foto.png';
       a.click();
-      
       URL.revokeObjectURL(imgUrl);
-      btn.innerText = "📸 Baixar Imagem Perfeita";
     };
     img.src = imgUrl;
   };
 
-  // ==========================================
-  // VÍDEO: Motor "Auto-Rotate" (Deixa o navegador girar sozinho)
-  // ==========================================
   document.querySelector('#btn-video').onclick = async () => {
     const webglCanvas = mv.shadowRoot.querySelector('canvas');
-    if (!webglCanvas) return;
+    if (!webglCanvas || !mv.model) return;
 
-    videoLoader.style.display = 'flex';
+    loaderTela.style.display = 'flex';
     
-    // Liga o gravador no formato Full HD
-    const captureCanvas = document.createElement('canvas');
-    captureCanvas.width = 1920; 
-    captureCanvas.height = 1080;
-    const ctx = captureCanvas.getContext('2d');
-
-    const stream = captureCanvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 });
-    const chunks = [];
-
-    recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-    
-    recorder.onstop = () => {
-      // Quando parar, junta o vídeo e desliga o giro
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `mockup-video-10s.webm`; 
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      mv.autoRotate = false; // Desliga o giro
-      videoLoader.style.display = 'none';
-    };
-
-    // A MÁGICA: Configura o 3D para girar SOZINHO (36 graus por segundo = 360 graus em 10s)
-    mv.cameraOrbit = `0deg 75deg 105%`; // Reseta a posição para começar limpo
-    mv.jumpCameraToGoal();
-    
-    await new Promise(r => setTimeout(r, 200)); // Espera 200ms pra caneca voltar ao eixo
-
-    mv.setAttribute('rotation-per-second', '36deg');
-    mv.setAttribute('auto-rotate-delay', '0');
-    mv.autoRotate = true; // LIGA O GIRO NATIVO DO NAVEGADOR
-
-    recorder.start();
-
-    let isRecording = true;
-    const duration = 10000; // 10 Segundos cravados
-    const startTime = performance.now();
-
-    // Loop "Sentar e Assistir": Apenas copia o que o navegador já está girando
-    function drawFrame(time) {
-      if (!isRecording) return;
-      
-      const elapsed = time - startTime;
-      
-      if (elapsed >= duration) {
-        isRecording = false;
-        recorder.stop();
-        return;
-      }
-
-      // Pinta o quadro atual sem forçar pulos na câmera
-      drawComposite(ctx, 1920, 1080, webglCanvas);
-
-      timerText.innerText = Math.ceil((duration - elapsed) / 1000) + 's';
-      requestAnimationFrame(drawFrame);
+    if (!ffmpeg) {
+        loaderTexto.innerText = "BAIXANDO MOTOR DE VÍDEO...";
+        loaderDetalhe.innerText = "Por favor, aguarde o carregamento (1ª vez demora um pouco).";
+        ffmpeg = new FFmpeg();
+        ffmpeg.on('log', ({ message }) => console.log(message));
+        
+        try {
+            await ffmpeg.load({
+                coreURL: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
+            });
+        } catch (error) {
+            console.error(error);
+            alert("ERRO: O servidor não permitiu o motor de vídeo. Verifique se o arquivo _headers está configurado corretamente no Netlify.");
+            loaderTela.style.display = 'none';
+            return;
+        }
     }
 
-    requestAnimationFrame(drawFrame);
+    loaderTexto.innerText = "CRIANDO QUADROS DA ANIMAÇÃO...";
+    
+    const orbit = mv.getCameraOrbit();
+    const startTheta = orbit.theta * (180 / Math.PI); 
+    const startPhi = orbit.phi;
+    const startRadius = orbit.radius;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1920; 
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+
+    const fps = 30;
+    const duration = 10; 
+    const totalFrames = fps * duration;
+    
+    for (let i = 1; i <= totalFrames; i++) {
+        const progress = i / totalFrames;
+        const currentAngle = startTheta + (progress * 360);
+        
+        mv.cameraOrbit = `${currentAngle}deg ${startPhi}rad ${startRadius}m`;
+        mv.jumpCameraToGoal();
+
+        await new Promise(r => setTimeout(r, 30));
+
+        drawFrame(ctx, 1920, 1080, webglCanvas);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const res = await fetch(dataUrl);
+        const buffer = await res.arrayBuffer();
+        const frameData = new Uint8Array(buffer);
+        
+        const frameName = `frame_${String(i).padStart(3, '0')}.jpg`;
+        await ffmpeg.writeFile(frameName, frameData);
+
+        timerText.innerText = Math.round((i / totalFrames) * 100) + '%';
+        loaderDetalhe.innerText = `Processando quadro ${i} de ${totalFrames}`;
+    }
+
+    loaderTexto.innerText = "COMPILANDO ARQUIVO MP4...";
+    loaderDetalhe.innerText = "Costurando o vídeo em alta qualidade...";
+    timerText.innerText = "⏳";
+
+    await ffmpeg.exec([
+        '-framerate', '30', 
+        '-pattern_type', 'sequence', 
+        '-i', 'frame_%03d.jpg', 
+        '-c:v', 'libx264', 
+        '-pix_fmt', 'yuv420p', 
+        'output.mp4'
+    ]);
+
+    const videoData = await ffmpeg.readFile('output.mp4');
+    const blob = new Blob([videoData.buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mockup-premium-10s.mp4`; 
+    a.click();
+    URL.revokeObjectURL(url);
+
+    for (let i = 1; i <= totalFrames; i++) {
+        await ffmpeg.deleteFile(`frame_${String(i).padStart(3, '0')}.jpg`);
+    }
+    await ffmpeg.deleteFile('output.mp4');
+
+    mv.cameraOrbit = `${startTheta}deg ${startPhi}rad ${startRadius}m`;
+    mv.jumpCameraToGoal();
+    loaderTela.style.display = 'none';
   };
 </script>
 </body>
